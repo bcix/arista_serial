@@ -69,3 +69,31 @@ bash /mnt/flash/usbserial.sh setbaud <port> <baud rate>
 ```
 
 This will restart the respective port.
+
+## FAQ
+
+### Why so much code for mapping ports?
+
+First of all: We wanted stable linear port IDs. USB is a device tree. Our
+first version was really simple -- it worked until we connected a 16-port
+USB-C hub. This hub actually consists of 5x 4-port hubs, in a rather weird
+topology.
+
+### Why Bash and not Python?
+
+While Python is native to Arista EOS, we saw little advantage, because we
+have to interact with sysfs, systemd and processes. Bash offered
+everything we needed.
+
+### Why does input look multiplied if I connect with multiple terminals?
+
+Many serial terminal servers only allow one user/terminal to connect to
+each serial port. If you want to see what others see, you usually need
+some external multiplexing (e.g. screen sharing).
+
+We wanted to avoid any locking issues and implemented all active session
+multiplexing.  This also allows the terminals to run as non-root users.
+
+If you connect to one serial port from multiple terminals, you can see the
+output in all terminals. Unfortunately this means you see the input of
+others twice. So far we haven't found an easy way around that.
