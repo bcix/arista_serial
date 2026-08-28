@@ -66,6 +66,22 @@ function get_port() {
         echo $(( $(usbtree_left "${SPATH}") + 1 ))
 }
 
+# Get the number of potential USB ports, max. 32
+function max_ports() {
+	port_count=0
+	hub_count=0
+	for infile in $(find /sys/bus/usb/devices/1-1/ -name maxchild); do
+                read maxchild < "${infile}"
+		test "${maxchild}" -gt "0" && (( hub_count++ ))
+		(( port_count += "${maxchild}" ))
+	done
+	sum=$(( ${port_count} - ${hub_count} + 1 ))
+	# we do not want to support >32 ports
+	test "${sum}" -gt 32 && sum=32
+	echo "${sum}"
+}
+
+# Called by udev upon hotplug event
 function plugin_serial() {
         TTYDEV="/dev/$1"
         if [ ! -c "${TTYDEV}" ]; then
@@ -145,18 +161,43 @@ _EOF_
         modprobe ftdi_sio
 }
 
+# Try to get the port id based on device name
+function port_by_name() {
+	Q="${1}"
+	for i in `seq 1 $(max_ports)`; do
+		PARAM_NAME="NAME_${i}"
+		NAME="${!PARAM_NAME}"
+		if [ "${NAME}" = "${Q}" ]; then
+			echo "${i}"
+			break
+		fi
+	done
+}
+
+# Connect to the multiplexer
 function connect() {
         ID="${1:-0}"
-        if [ "${ID}" -lt 1 -o "${ID}" -gt 32 ]; then
+	if [ "${ID}" != "${ID//[^0-9]/}" ]; then
+		# contains not only numbers, try lookup by name
+		NUM=$(port_by_name "${ID}")
+		if [ -z "${NUM}" ]; then
+			echo "Device named ${ID} not found"
+			exit 1
+		fi
+		ID=$NUM
+	elif [ "${ID}" -lt 1 -o "${ID}" -gt 32 ]; then
                 echo "Invalid Port ID ${ID}" >&2
-                exit 1  
+                exit 1
         fi
         PORT=$(( 7000 + $ID ))
 
 	# connect to multiplexer port
+	echo "Connecting to port ${ID} -- exit with ^]"
         socat "TCP:[::1]:${PORT}" -,raw,echo=0,escape=0x1d
+	echo "" # start new line
 }
 
+# set baud rate of the port
 function set_baud() {
         ID="${1:-0}"
 	BAUD="${2}"
@@ -190,6 +231,53 @@ function set_baud() {
 	restart_serial "${ID}"
 }
 
+# set device name for a port
+function set_name() {
+        ID="${1:-0}"
+	NAME="${2}"
+
+        if [ "${ID}" -lt 1 -o "${ID}" -gt 32 ]; then
+                echo "Invalid Port ID ${ID}" >&2
+                exit 1
+        fi
+
+	if [ "${NAME}" != "${NAME//[^0-9a-zA-Z_-]/+}" ]; then
+		echo "Only letters, numbers, - and _ allowed in device names"
+		exit 1
+	fi
+
+	# get current setting
+	PARAM_NAME="NAME_${ID}"
+	PARAMS="${!PARAM_NAME}"
+
+	if [ "${PARAMS}" = "${NAME}" ]; then
+		echo "Requested name ${NAME} already set"
+		exit 0
+	fi
+
+	# remove previous entries and set new value
+	test -f "${CFGFILE}" && sed -i "/^${PARAM_NAME}=/ d" "${CFGFILE}"
+	echo "${PARAM_NAME}=${NAME}" >> "${CFGFILE}"
+}
+
+# show a list of ports
+function list_ports() {
+	echo -e 'Port\tActive\tBaudrate\tName'
+	for i in `seq 1 $(max_ports)`; do
+		PARAM_NAME="PORT_${i}"
+		PARAMS="${!PARAM_NAME}"
+		[ -z "${PARAMS}" ] && PARAMS="${PORT_DEFAULT}"
+		NAME_NAME="NAME_${i}"
+		NAME="${!NAME_NAME}"
+		# if serial adapter is connected a socat process should exist
+		PORT=$(( 7000 + "$i" ))
+		SOCAT=$(pgrep -af "socat .*:${PORT}\$")
+		test -n "${SOCAT}" && CONN='*' || CONN='-'
+
+		printf "%3s\t%4s\t%8s\t%s\n" "${i}" "${CONN}" "${PARAMS}" "${NAME}"
+	done
+}
+
 PORT_DEFAULT="b9600"
 CFGFILE="${0%.sh}.conf" 
 test -f "${CFGFILE}" && source "${CFGFILE}"
@@ -197,29 +285,37 @@ test -f "${CFGFILE}" && source "${CFGFILE}"
 CMD="${1}"
 shift 1
 case "${CMD}" in
-        start)
-                initialize
-                ;;
+	start)
+		initialize
+		;;
 	setbaud)
 		set_baud "$@"
+		;;
+	setname)
+		set_name "$@"
 		;;
 	restart)
 		restart_serial "$@"
 		;;
-        plugin)
-                plugin_serial "$@"
-                ;;
-        connect)
-                connect "$@"
-                ;;
-        *)
-                echo "Invalid command: ${CMD}" >&2
-		echo "Usage: $0 start|connect|restart|setbaud"
+	plugin)
+		plugin_serial "$@"
+		;;
+	connect)
+		connect "$@"
+		;;
+	list)
+		list_ports
+		;;
+	*)
+		echo "Invalid command: ${CMD}" >&2
+		echo "Usage: $0 start|connect|restart|setbaud|setname|list"
 		echo "  start                     - initialize script, to be run once as root"
-		echo "  connect <port>            - connect to the serial console, exit with ^]"
+		echo "  connect <port|name>       - connect to the serial console, exit with ^]"
 		echo "  restart <port>            - re-initialize connection"
 		echo "  setbaud <port> <baudrate> - set the baud rate for a specific port"
-		
+		echo "  setname <port> <name>     - provide a name for a specific port"
+		echo "  list                      - list serial ports"
+
 		exit 1
-                ;;
+		;;
 esac
