@@ -1,6 +1,6 @@
 #!/bin/bash 
 #
-# This file is part of the arista_serial distribution (https://github.com/bcix/arista_serila).
+# This file is part of the arista_serial distribution (https://github.com/bcix/arista_serial).
 # Copyright (c) 2026 BCIX Management GmbH, André Grüneberg
 #
 # This program is free software: you can redistribute it and/or modify
