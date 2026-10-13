@@ -1,0 +1,75 @@
+vendor:
+  name: BCIX
+  email: info@bcix.de
+namespace: bcix.serial
+commands:
+  serialConnect:
+    syntax: serial <port>
+    mode: Unprivileged
+    data:
+      <port>:
+        serialPort:
+          values:
+            '1': Serial port 1
+            '2': Serial port 2
+            '3': Serial port 3
+            '4': Serial port 4
+            '5': Serial port 5
+            '6': Serial port 6
+            '7': Serial port 7
+            '8': Serial port 8
+            '9': Serial port 9
+            '10': Serial port 10
+            '11': Serial port 11
+            '12': Serial port 12
+            '13': Serial port 13
+            '14': Serial port 14
+            '15': Serial port 15
+            '16': Serial port 16
+            '17': Serial port 17
+            '18': Serial port 18
+            '19': Serial port 19
+            '20': Serial port 20
+            '21': Serial port 21
+            '22': Serial port 22
+            '23': Serial port 23
+            '24': Serial port 24
+            '25': Serial port 25
+            '26': Serial port 26
+            '27': Serial port 27
+            '28': Serial port 28
+            '29': Serial port 29
+            '30': Serial port 30
+            '31': Serial port 31
+            '32': Serial port 32
+          regex: '^([1-9]|[12][0-9]|3[0-2]|[A-Za-z_-][A-Za-z0-9_-]*|[0-9]+[A-Za-z_-][A-Za-z0-9_-]*)$'
+  serialSetBaud:
+    syntax: setserial <port> baud <rate>
+    mode: Privileged
+    data:
+      <port>:
+        integer:
+          min: 1
+          max: 32
+      <rate>:
+        enum:
+          values:
+            '9600': 9600 baud
+            '19200': 19200 baud
+            '38400': 38400 baud
+            '57600': 57600 baud
+            '115200': 115200 baud
+  serialSetName:
+    syntax: setserial <port> name <name>
+    mode: Privileged
+    data:
+      <port>:
+        integer:
+          min: 1
+          max: 32
+      <name>:
+        regex:
+          regex: '^[A-Za-z0-9_-]+$'
+  showSerial:
+    syntax: show serial
+    mode: Unprivileged
