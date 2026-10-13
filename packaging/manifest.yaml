@@ -3,4 +3,4 @@ agentsToRestart:
   - ConfigAgent
 version:
   - '4*':
-      - arista-serial-1.0.9-1.noarch.rpm
+      - arista-serial-1.0.0-1.noarch.rpm

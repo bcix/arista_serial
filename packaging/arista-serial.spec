@@ -1,5 +1,5 @@
 Name:           arista-serial
-Version:        1.0.9
+Version:        1.0.0
 Release:        1
 Summary:        USB serial terminal server helper for Arista EOS
 License:        GPL-3.0-or-later

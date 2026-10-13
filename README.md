@@ -14,19 +14,19 @@ From the repository root, run:
 packaging/build-docker.sh
 ```
 
-The extension is written to `dist/arista-serial-1.0.9.swix`. The SWIX manifest
+The extension is written to `dist/arista-serial-1.0.0.swix`. The SWIX manifest
 targets EOS 4.x. Copy it to the switch and install it with the EOS CLI:
 
 ```text
-copy scp:<user>@<host>:<path>/arista-serial-1.0.9.swix vrf MGMT extension:
-extension arista-serial-1.0.9.swix
+copy scp:<user>@<host>:<path>/arista-serial-1.0.0.swix vrf MGMT extension:
+extension arista-serial-1.0.0.swix
 ```
 
 To install it automatically at boot, add the SWIX to the boot-extension list:
 
 ```text
 configure
-boot extension arista-serial-1.0.9.swix
+boot extension arista-serial-1.0.0.swix
 end
 write memory
 ```

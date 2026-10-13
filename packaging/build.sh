@@ -21,11 +21,11 @@ rpmbuild \
 	--define "_sourcedir ${ROOT_DIR}" \
 	-bb "${ROOT_DIR}/packaging/arista-serial.spec"
 
-RPM_FILE="${TOP_DIR}/RPMS/noarch/arista-serial-1.0.9-1.noarch.rpm"
+RPM_FILE="${TOP_DIR}/RPMS/noarch/arista-serial-1.0.0-1.noarch.rpm"
 swi-tools create \
 	--info "${ROOT_DIR}/packaging/manifest.yaml" \
 	--force \
-	"${DIST_DIR}/arista-serial-1.0.9.swix" \
+	"${DIST_DIR}/arista-serial-1.0.0.swix" \
 	"${RPM_FILE}"
 
-printf 'Built %s\n' "${DIST_DIR}/arista-serial-1.0.9.swix"
+printf 'Built %s\n' "${DIST_DIR}/arista-serial-1.0.0.swix"
