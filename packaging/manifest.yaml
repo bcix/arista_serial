@@ -1,0 +1,6 @@
+metadataVersion: 1.0
+agentsToRestart:
+  - ConfigAgent
+version:
+  - '4*':
+      - arista-serial-1.0.9-1.noarch.rpm

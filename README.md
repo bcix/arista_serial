@@ -1,10 +1,62 @@
 # arista_serial
 Implementation of serial terminal server on Arista EOS based switches
 
-## Installation
+## EOS extension package
 
-The script shall be uploaded to the device's `/mnt/flash` folder. You will
-need to make it executable by using:
+The repository includes a build recipe for an EOS SWIX extension. It installs
+`usbserial.sh` to `/mnt/flash/usbserial.sh`, preserving the paths used by the
+commands below.
+
+The builder needs Docker and network access to download its Linux build tools.
+From the repository root, run:
+
+```
+packaging/build-docker.sh
+```
+
+The extension is written to `dist/arista-serial-1.0.9.swix`. The SWIX manifest
+targets EOS 4.x. Copy it to the switch and install it with the EOS CLI:
+
+```text
+copy scp:<user>@<host>:<path>/arista-serial-1.0.9.swix vrf MGMT extension:
+extension arista-serial-1.0.9.swix
+```
+
+To install it automatically at boot, add the SWIX to the boot-extension list:
+
+```text
+configure
+boot extension arista-serial-1.0.9.swix
+end
+write memory
+```
+
+Check `show extensions` to confirm installation. The package installs an EOS
+CLI extension with `serial <port>`, `setserial <port> baud <rate>`,
+`setserial <port> name <name>`, and `show serial`. Port completion lists
+numeric IDs 1–32 while `serial` also accepts configured names. Baud completion
+offers 9600, 19200, 38400, 57600, and 115200. The package removes aliases left
+by earlier package versions. The SWIX manifest restarts ConfigAgent so
+the commands load; if installed with `delay-restart-agents`, run
+`extension restart-agents` later. Initialize the script's udev and systemd
+configuration after installation and after each reboot with the `start`
+command shown below. To run initialization on every boot, add the event
+handler described below.
+
+The script can also be called directly:
+
+```
+bash /mnt/flash/usbserial.sh list
+bash /mnt/flash/usbserial.sh connect 1
+```
+
+The script expects `socat`, `ncat`, `udevadm`, systemd, and the `ftdi_sio`
+kernel module to be available on the switch.
+
+## Manual installation from source
+
+If installing the script without the extension package, upload it to the
+device's `/mnt/flash` folder and make it executable:
 
 ```
 bash
@@ -88,9 +140,9 @@ bash /mnt/flash/usbserial.sh list
 
 ## Aliases
 
-To simplify operations, you may wish to have some EOS CLI aliases.
-
-We are using the following set of aliases:
+The extension installs these aliases automatically. For a manual script
+installation, add the `serial`, `setserial`, and `show serial` shortcuts to the
+EOS CLI by entering these statements in configuration mode:
 
 ```
 alias "serial ([^ ]+)"
